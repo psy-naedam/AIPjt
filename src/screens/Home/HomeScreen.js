@@ -19,6 +19,7 @@ LocaleConfig.defaultLocale = 'ko';
 export default function HomeScreen({ navigation }) {
   const [selectedDate, setSelectedDate] = useState('');
   const [showTodo, setShowTodo] = useState(true); // 첫 로딩 시 리스트가 보이도록 true로 변경
+  const [showCalendar, setShowCalendar] = useState(true); // 달력 표시 상태 추가
   const [newTodoTitle, setNewTodoTitle] = useState(''); // 새 할 일 입력 상태
   const [newTodoMember, setNewTodoMember] = useState('가족 공통'); // 새 할 일 담당자 상태
   const [editingTodoId, setEditingTodoId] = useState(null); // 현재 편집 중인 Todo ID
@@ -171,7 +172,16 @@ export default function HomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
       {/* 왼쪽: 액션 버튼 영역 (기존 오른쪽) */}
-      <View style={styles.rightPanel}>
+      <View style={[styles.rightPanel, !showCalendar && { flex: 1 }]}>
+        <View style={styles.sidebarHeader}>
+          <TouchableOpacity 
+            style={styles.toggleCalendarBtn} 
+            onPress={() => setShowCalendar(!showCalendar)}
+          >
+            <Text style={styles.toggleCalendarText}>{showCalendar ? '◀ 달력 숨기기' : '▶ 달력 보기'}</Text>
+          </TouchableOpacity>
+        </View>
+
         <ScrollView 
           style={styles.actionScrollView}
           contentContainerStyle={styles.actionContainer}
@@ -248,37 +258,39 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       {/* 오른쪽: 달력 영역 (기존 왼쪽) */}
-      <View style={styles.leftPanel}>
-        <View style={styles.calendarContainer}>
-          <Calendar
-            onDayPress={(day) => setSelectedDate(day.dateString)}
-            markedDates={markedDates}
-            theme={{
-              backgroundColor: COLORS.white,
-              calendarBackground: COLORS.white,
-              textSectionTitleColor: '#b6c1cd',
-              selectedDayBackgroundColor: COLORS.secondary,
-              selectedDayTextColor: '#ffffff',
-              todayTextColor: COLORS.primary,
-              dayTextColor: '#2d4150',
-              textDisabledColor: '#d9e1e8',
-              dotColor: COLORS.primary,
-              selectedDotColor: '#ffffff',
-              arrowColor: COLORS.primary,
-              monthTextColor: COLORS.text,
-              textDayFontFamily: 'sans-serif',
-              textMonthFontFamily: 'sans-serif',
-              textDayHeaderFontFamily: 'sans-serif',
-              textDayFontWeight: '300',
-              textMonthFontWeight: 'bold',
-              textDayHeaderFontWeight: '300',
-              textDayFontSize: 16,
-              textMonthFontSize: 16,
-              textDayHeaderFontSize: 16
-            }}
-          />
+      {showCalendar && (
+        <View style={styles.leftPanel}>
+          <View style={styles.calendarContainer}>
+            <Calendar
+              onDayPress={(day) => setSelectedDate(day.dateString)}
+              markedDates={markedDates}
+              theme={{
+                backgroundColor: COLORS.white,
+                calendarBackground: COLORS.white,
+                textSectionTitleColor: '#b6c1cd',
+                selectedDayBackgroundColor: COLORS.secondary,
+                selectedDayTextColor: '#ffffff',
+                todayTextColor: COLORS.primary,
+                dayTextColor: '#2d4150',
+                textDisabledColor: '#d9e1e8',
+                dotColor: COLORS.primary,
+                selectedDotColor: '#ffffff',
+                arrowColor: COLORS.primary,
+                monthTextColor: COLORS.text,
+                textDayFontFamily: 'sans-serif',
+                textMonthFontFamily: 'sans-serif',
+                textDayHeaderFontFamily: 'sans-serif',
+                textDayFontWeight: '300',
+                textMonthFontWeight: 'bold',
+                textDayHeaderFontWeight: '300',
+                textDayFontSize: 16,
+                textMonthFontSize: 16,
+                textDayHeaderFontSize: 16
+              }}
+            />
+          </View>
         </View>
-      </View>
+      )}
     </View>
   );
 }
@@ -312,6 +324,22 @@ const styles = StyleSheet.create({
   actionContainer: {
     // 내부 정렬은 기존(왼쪽 정렬) 유지
     alignItems: 'flex-start', 
+    paddingBottom: 20,
+  },
+  sidebarHeader: {
+    width: '100%',
+    paddingBottom: 10,
+    marginBottom: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  toggleCalendarBtn: {
+    paddingVertical: 5,
+  },
+  toggleCalendarText: {
+    fontSize: 12,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   addButton: {
     backgroundColor: COLORS.primary,
