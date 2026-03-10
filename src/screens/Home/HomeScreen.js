@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, FlatList } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, FlatList, ScrollView } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
@@ -54,6 +54,21 @@ export default function HomeScreen({ navigation }) {
     </TouchableOpacity>
   );
 
+  const renderEventItem = (item) => (
+    <View key={item.id} style={styles.eventItem}>
+      <View style={[styles.eventDot, { backgroundColor: item.color || COLORS.primary }]} />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.eventTitle}>{item.title}</Text>
+        <Text style={styles.eventDate}>{item.date}</Text>
+      </View>
+      {item.member && (
+        <View style={styles.assigneeBadge}>
+          <Text style={styles.assigneeText}>{item.member}</Text>
+        </View>
+      )}
+    </View>
+  );
+
   // 전역 속성(events)을 캘린더 markedDates 형식에 맞게 변환
   const markedDates = events.reduce((acc, event) => {
     acc[event.date] = { marked: true, dotColor: event.color };
@@ -86,16 +101,31 @@ export default function HomeScreen({ navigation }) {
              style={[styles.addButton, { backgroundColor: COLORS.tertiary, marginTop: 12 }]} 
              onPress={() => setShowTodo(!showTodo)}
           >
-             <Text style={styles.addButtonText}>{showTodo ? '가족 할 일 닫기' : '가족 할 일 확인'}</Text>
+             <Text style={styles.addButtonText}>{showTodo ? '목록 닫기' : '모든 일정 및 할 일 확인'}</Text>
           </TouchableOpacity>
           
           {showTodo && (
-            <FlatList
-              data={todos}
-              keyExtractor={(item) => item.id}
-              renderItem={renderTodoItem}
-              style={{ width: '100%', marginTop: 15 }}
-            />
+            <ScrollView style={{ width: '100%', marginTop: 15 }} showsVerticalScrollIndicator={false}>
+              {events.length > 0 && (
+                <View style={styles.listSection}>
+                  <Text style={styles.sectionTitle}>📅 다가오는 가족 일정</Text>
+                  {events.map((event) => renderEventItem(event))}
+                </View>
+              )}
+              
+              {todos.length > 0 && (
+                <View style={styles.listSection}>
+                  <Text style={styles.sectionTitle}>✅ 가족 할 일 목록</Text>
+                  {todos.map((todo) => renderTodoItem({ item: todo }))}
+                </View>
+              )}
+
+              {events.length === 0 && todos.length === 0 && (
+                <Text style={{ textAlign: 'center', color: COLORS.lightText, marginTop: 20 }}>
+                  등록된 일정이나 할 일이 없습니다.
+                </Text>
+              )}
+            </ScrollView>
           )}
         </View>
       </View>
@@ -225,5 +255,40 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  listSection: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: 10,
+  },
+  eventItem: {
+    backgroundColor: COLORS.white,
+    padding: 12,
+    borderRadius: SIZES.radius,
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    ...SHADOWS.light,
+    width: '100%',
+  },
+  eventDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 12,
+  },
+  eventTitle: {
+    fontSize: 14,
+    color: COLORS.text,
+    fontWeight: '600',
+  },
+  eventDate: {
+    fontSize: 12,
+    color: COLORS.lightText,
+    marginTop: 4,
   }
 });
