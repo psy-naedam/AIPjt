@@ -3,15 +3,19 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Modal 
 import { Calendar } from 'react-native-calendars';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import { useFamily } from '../../store/FamilyContext';
-import { addEvent } from '../../services/dbService';
+import { addEvent, updateEvent } from '../../services/dbService';
 
 export default function ScheduleScreen({ route, navigation }) {
-  const [title, setTitle] = useState('');
-  const [date, setDate] = useState(route.params?.date || '');
-  const [isCalendarVisible, setCalendarVisible] = useState(false);
-  const [selectedMember, setSelectedMember] = useState(''); // 선택된 가족 구성원 상태
+  // route.params에 editEvent가 넘어오면 '수정 모드'로 동작
+  const editModeParams = route.params?.editEvent || null;
+  const isEditMode = !!editModeParams;
 
-  const members = ['아빠', '엄마', '재인', '재이']; // 가족 구성원 목록
+  const [title, setTitle] = useState(isEditMode ? editModeParams.title : '');
+  const [date, setDate] = useState(isEditMode ? editModeParams.date : (route.params?.date || ''));
+  const [isCalendarVisible, setCalendarVisible] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(isEditMode ? (editModeParams.member || '') : ''); 
+
+  const members = ['아빠', '엄마', '재인', '재이']; 
 
   const { familyId, events, setEvents } = useFamily();
   
@@ -29,22 +33,28 @@ export default function ScheduleScreen({ route, navigation }) {
     };
 
     try {
-      // DB 저장 요청
-      const newId = await addEvent(familyId, newEvent);
-      
-      // UI 즉시 업데이트 (Optimistic Update)
-      setEvents([...events, { ...newEvent, id: newId }]);
-      alert(`일정 '${title}'이(가) 저장되었습니다!`);
+      if (isEditMode) {
+        // 기존 일정 수정 (DB 연동)
+        await updateEvent(familyId, editModeParams.id, newEvent);
+        // 전역 상태의 events 배열 내 해당 일정 업데이트
+        setEvents(events.map(ev => ev.id === editModeParams.id ? { ...ev, ...newEvent } : ev));
+        alert(`일정이 성공적으로 수정되었습니다!`);
+      } else {
+        // 신규 추가 (DB 연동)
+        const newId = await addEvent(familyId, newEvent);
+        setEvents([...events, { ...newEvent, id: newId }]);
+        alert(`일정 '${title}'이(가) 저장되었습니다!`);
+      }
       navigation.goBack();
     } catch (error) {
-       console.error("일정 추가 실패", error);
-       alert("일정을 추가하는 데 실패했습니다.");
+       console.error("일정 저장 실패", error);
+       alert("일정을 저장하는 데 실패했습니다.");
     }
   };
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.headerTitle}>가족 일정 추가</Text>
+      <Text style={styles.headerTitle}>{isEditMode ? '가족 일정 수정' : '가족 일정 추가'}</Text>
       
       <View style={styles.card}>
         <Text style={styles.label}>일정 제목</Text>
@@ -138,7 +148,7 @@ export default function ScheduleScreen({ route, navigation }) {
         </View>
 
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>일정 저장하기</Text>
+          <Text style={styles.saveButtonText}>{isEditMode ? '일정 수정하기' : '일정 저장하기'}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

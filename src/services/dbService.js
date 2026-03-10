@@ -21,7 +21,13 @@ export const addEvent = async (familyId, eventData) => {
   console.log(`[API] 일정 추가:`, eventData);
   // const docRef = await addDoc(collection(db, `families/${familyId}/events`), eventData);
   // return docRef.id;
-  return 'new_event_id';
+  return 'new_event_' + Date.now();
+};
+
+export const updateEvent = async (familyId, eventId, eventData) => {
+  console.log(`[API] 일정 수정:`, eventId, eventData);
+  // const eventRef = doc(db, `families/${familyId}/events`, eventId);
+  // await updateDoc(eventRef, eventData);
 };
 
 /* 

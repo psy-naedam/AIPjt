@@ -55,7 +55,12 @@ export default function HomeScreen({ navigation }) {
   );
 
   const renderEventItem = (item) => (
-    <View key={item.id} style={styles.eventItem}>
+    <TouchableOpacity 
+      key={item.id} 
+      style={styles.eventItem}
+      onPress={() => navigation.navigate('Schedule', { editEvent: item })}
+      activeOpacity={0.7}
+    >
       <View style={[styles.eventDot, { backgroundColor: item.color || COLORS.primary }]} />
       <View style={{ flex: 1 }}>
         <Text style={styles.eventTitle}>{item.title}</Text>
@@ -66,7 +71,7 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.assigneeText}>{item.member}</Text>
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 
   // 전역 속성(events)을 캘린더 markedDates 형식에 맞게 변환
