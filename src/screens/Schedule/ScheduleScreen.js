@@ -7,22 +7,25 @@ import { addEvent } from '../../services/dbService';
 
 export default function ScheduleScreen({ route, navigation }) {
   const [title, setTitle] = useState('');
-  // HomeScreen에서 넘어온 date 파라미터가 있으면 초기값으로 사용, 없으면 빈 문자열
   const [date, setDate] = useState(route.params?.date || '');
-  const [isCalendarVisible, setCalendarVisible] = useState(false);  // 모달 제어용 상태
+  const [isCalendarVisible, setCalendarVisible] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(''); // 선택된 가족 구성원 상태
+
+  const members = ['아빠', '엄마', '재인', '재이']; // 가족 구성원 목록
 
   const { familyId, events, setEvents } = useFamily();
   
   const handleSave = async () => {
-    if (!title || !date) {
-      alert('일정 제목과 날짜를 모두 입력해주세요.');
+    if (!title || !date || !selectedMember) {
+      alert('일정 제목, 날짜, 그리고 담당 가족 구성원을 모두 선택해주세요.');
       return;
     }
 
     const newEvent = {
        title,
        date,
-       color: COLORS.primary // 임시 색상 고정값 
+       member: selectedMember,
+       color: COLORS.primary 
     };
 
     try {
@@ -111,6 +114,29 @@ export default function ScheduleScreen({ route, navigation }) {
           </View>
         </Modal>
 
+        <Text style={styles.label}>가족 구성원 선택</Text>
+        <View style={styles.memberContainer}>
+          {members.map((item) => (
+            <TouchableOpacity 
+              key={item}
+              style={[
+                styles.memberButton, 
+                selectedMember === item && styles.memberButtonSelected
+              ]}
+              onPress={() => setSelectedMember(item)}
+            >
+              <Text 
+                style={[
+                  styles.memberText, 
+                  selectedMember === item && styles.memberTextSelected
+                ]}
+              >
+                {item}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveButtonText}>일정 저장하기</Text>
         </TouchableOpacity>
@@ -178,6 +204,35 @@ const styles = StyleSheet.create({
   },
   closeModalText: {
     color: COLORS.text,
+    fontWeight: 'bold',
+  },
+  memberContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    marginTop: 5,
+  },
+  memberButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: SIZES.radius,
+    backgroundColor: '#F5F5F5',
+    alignItems: 'center',
+    marginHorizontal: 4,
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
+  },
+  memberButtonSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  memberText: {
+    fontSize: SIZES.body4,
+    color: COLORS.lightText,
+    fontWeight: '600',
+  },
+  memberTextSelected: {
+    color: COLORS.white,
     fontWeight: 'bold',
   },
   saveButton: {
