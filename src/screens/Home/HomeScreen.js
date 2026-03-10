@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, FlatList, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
@@ -173,15 +173,6 @@ export default function HomeScreen({ navigation }) {
     <View style={styles.container}>
       {/* 왼쪽: 액션 버튼 영역 (기존 오른쪽) */}
       <View style={[styles.rightPanel, !showCalendar && { flex: 1 }]}>
-        <View style={styles.sidebarHeader}>
-          <TouchableOpacity 
-            style={styles.toggleCalendarBtn} 
-            onPress={() => setShowCalendar(!showCalendar)}
-          >
-            <Text style={styles.toggleCalendarText}>{showCalendar ? '◀ 달력 숨기기' : '▶ 달력 보기'}</Text>
-          </TouchableOpacity>
-        </View>
-
         <ScrollView 
           style={styles.actionScrollView}
           contentContainerStyle={styles.actionContainer}
@@ -260,6 +251,15 @@ export default function HomeScreen({ navigation }) {
       {/* 오른쪽: 달력 영역 (기존 왼쪽) */}
       {showCalendar && (
         <View style={styles.leftPanel}>
+          {/* 달력 숨기기 핸들 아이콘 */}
+          <TouchableOpacity 
+            style={styles.calendarHandleBtn} 
+            onPress={() => setShowCalendar(false)}
+            activeOpacity={0.8}
+          >
+            <Image source={require('../../../assets/hide.png')} style={styles.handleIcon} />
+          </TouchableOpacity>
+
           <View style={styles.calendarContainer}>
             <Calendar
               onDayPress={(day) => setSelectedDate(day.dateString)}
@@ -290,6 +290,17 @@ export default function HomeScreen({ navigation }) {
             />
           </View>
         </View>
+      )}
+
+      {/* 달력 보기 핸들 아이콘 (달력이 숨겨졌을 때만 표시) */}
+      {!showCalendar && (
+        <TouchableOpacity 
+          style={[styles.calendarHandleBtn, styles.showHandleBtn]} 
+          onPress={() => setShowCalendar(true)}
+          activeOpacity={0.8}
+        >
+          <Image source={require('../../../assets/show.png')} style={styles.handleIcon} />
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -327,19 +338,38 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   sidebarHeader: {
-    width: '100%',
-    paddingBottom: 10,
-    marginBottom: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    display: 'none', // 제거 또는 숨김
   },
-  toggleCalendarBtn: {
-    paddingVertical: 5,
+  calendarHandleBtn: {
+    position: 'absolute',
+    left: -15,
+    top: '45%',
+    zIndex: 10,
+    width: 30,
+    height: 60,
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 15,
+    borderBottomLeftRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.light,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    borderRightWidth: 0,
   },
-  toggleCalendarText: {
-    fontSize: 12,
-    color: COLORS.primary,
-    fontWeight: '600',
+  showHandleBtn: {
+    right: 0,
+    left: undefined,
+    borderTopLeftRadius: 15,
+    borderBottomLeftRadius: 15,
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  handleIcon: {
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
+    opacity: 0.6,
   },
   addButton: {
     backgroundColor: COLORS.primary,
@@ -354,6 +384,10 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: SIZES.h3,
     fontWeight: 'bold',
+  },
+  todoItemWrapper: {
+    width: '100%',
+    position: 'relative',
   },
   todoItem: {
     backgroundColor: COLORS.white,
