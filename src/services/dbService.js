@@ -47,3 +47,22 @@ export const updateTodoStatus = async (familyId, todoId, isCompleted) => {
   // const todoRef = doc(db, `families/${familyId}/todos`, todoId);
   // await updateDoc(todoRef, { isCompleted });
 };
+
+export const addTodo = async (familyId, todoData) => {
+  console.log(`[API] 할 일 추가:`, todoData);
+  // const docRef = await addDoc(collection(db, `families/${familyId}/todos`), todoData);
+  // return docRef.id;
+  return 'new_todo_' + Date.now();
+};
+
+export const deleteTodo = async (familyId, todoId) => {
+  console.log(`[API] 할 일 삭제: ${todoId}`);
+  // const todoRef = doc(db, `families/${familyId}/todos`, todoId);
+  // await deleteDoc(todoRef);
+};
+
+export const updateTodo = async (familyId, todoId, todoData) => {
+  console.log(`[API] 할 일 수정: ${todoId}`, todoData);
+  // const todoRef = doc(db, `families/${familyId}/todos`, todoId);
+  // await updateDoc(todoRef, todoData);
+};

@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, FlatList, ScrollView } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, FlatList, ScrollView, TextInput } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
 import { useFamily } from '../../store/FamilyContext';
-import { updateTodoStatus } from '../../services/dbService';
+import { updateTodoStatus, addTodo, deleteTodo, updateTodo } from '../../services/dbService';
 
 // 한국어 달력 설정
 LocaleConfig.locales['ko'] = {
@@ -19,16 +18,14 @@ LocaleConfig.defaultLocale = 'ko';
 export default function HomeScreen({ navigation }) {
   const [selectedDate, setSelectedDate] = useState('');
   const [showTodo, setShowTodo] = useState(false);
+  const [newTodoTitle, setNewTodoTitle] = useState(''); // 새 할 일 입력 상태
   const { events, loading, familyId, todos, setTodos } = useFamily();
 
   const toggleTodo = async (id, currentStatus) => {
-    // UI 즉시 업데이트 (Optimistic Update)
     const newStatus = !currentStatus;
     setTodos(todos.map(todo => 
       todo.id === id ? { ...todo, isCompleted: newStatus } : todo
     ));
-    
-    // DB 연동 호출
     try {
       await updateTodoStatus(familyId, id, newStatus);
     } catch (error) {
@@ -36,22 +33,56 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const handleAddTodo = async () => {
+    if (!newTodoTitle.trim()) return;
+    
+    const newTodo = {
+      title: newTodoTitle,
+      isCompleted: false,
+      assignee: '우리 가족' // 기본값
+    };
+
+    try {
+      const newId = await addTodo(familyId, newTodo);
+      setTodos([{ ...newTodo, id: newId }, ...todos]);
+      setNewTodoTitle('');
+    } catch (error) {
+      console.error("Todo 추가 실패", error);
+    }
+  };
+
+  const handleDeleteTodo = async (id) => {
+    try {
+      await deleteTodo(familyId, id);
+      setTodos(todos.filter(todo => todo.id !== id));
+    } catch (error) {
+      console.error("Todo 삭제 실패", error);
+    }
+  };
+
   const renderTodoItem = ({ item }) => (
-    <TouchableOpacity 
-      style={[styles.todoItem, item.isCompleted && styles.todoItemCompleted]} 
-      onPress={() => toggleTodo(item.id, item.isCompleted)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.todoRow}>
-        <View style={[styles.checkbox, item.isCompleted && styles.checkboxActive]} />
-        <Text style={[styles.todoTitle, item.isCompleted && styles.todoTextCompleted]}>
-          {item.title}
-        </Text>
-      </View>
-      <View style={styles.assigneeBadge}>
-        <Text style={styles.assigneeText}>{item.assignee}</Text>
-      </View>
-    </TouchableOpacity>
+    <View style={styles.todoItemWrapper}>
+      <TouchableOpacity 
+        style={[styles.todoItem, item.isCompleted && styles.todoItemCompleted]} 
+        onPress={() => toggleTodo(item.id, item.isCompleted)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.todoRow}>
+          <View style={[styles.checkbox, item.isCompleted && styles.checkboxActive]} />
+          <Text style={[styles.todoTitle, item.isCompleted && styles.todoTextCompleted]}>
+            {item.title}
+          </Text>
+        </View>
+        <View style={styles.assigneeBadge}>
+          <Text style={styles.assigneeText}>{item.assignee}</Text>
+        </View>
+      </TouchableOpacity>
+      
+      {/* 삭제 버튼 추가 */}
+      <TouchableOpacity onPress={() => handleDeleteTodo(item.id)} style={styles.deleteButton}>
+        <Text style={styles.deleteButtonText}>✕</Text>
+      </TouchableOpacity>
+    </View>
   );
 
   const renderEventItem = (item) => (
@@ -118,9 +149,24 @@ export default function HomeScreen({ navigation }) {
                 </View>
               )}
               
-              {todos.length > 0 && (
+              {todos.length >= 0 && (
                 <View style={styles.listSection}>
                   <Text style={styles.sectionTitle}>✅ 가족 할 일 목록</Text>
+                  
+                  {/* 신규 할 일 입력창 */}
+                  <View style={styles.todoInputContainer}>
+                    <TextInput
+                      style={styles.todoInput}
+                      placeholder="새로운 할 일을 입력하세요"
+                      value={newTodoTitle}
+                      onChangeText={setNewTodoTitle}
+                      onSubmitEditing={handleAddTodo}
+                    />
+                    <TouchableOpacity style={styles.todoAddBtn} onPress={handleAddTodo}>
+                      <Text style={styles.todoAddBtnText}>추가</Text>
+                    </TouchableOpacity>
+                  </View>
+
                   {todos.map((todo) => renderTodoItem({ item: todo }))}
                 </View>
               )}
@@ -295,5 +341,43 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.lightText,
     marginTop: 4,
+  },
+  todoItemWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  deleteButton: {
+    padding: 10,
+    marginLeft: 5,
+  },
+  deleteButtonText: {
+    fontSize: 18,
+    color: '#FF6B6B',
+    fontWeight: 'bold',
+  },
+  todoInputContainer: {
+    flexDirection: 'row',
+    marginBottom: 15,
+  },
+  todoInput: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: SIZES.radius,
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
+    marginRight: 8,
+  },
+  todoAddBtn: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 15,
+    justifyContent: 'center',
+    borderRadius: SIZES.radius,
+  },
+  todoAddBtnText: {
+    color: COLORS.white,
+    fontWeight: 'bold',
   }
 });
