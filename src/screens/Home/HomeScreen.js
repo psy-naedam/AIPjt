@@ -20,9 +20,12 @@ export default function HomeScreen({ navigation }) {
   const [selectedDate, setSelectedDate] = useState('');
   const [showTodo, setShowTodo] = useState(true); // 첫 로딩 시 리스트가 보이도록 true로 변경
   const [newTodoTitle, setNewTodoTitle] = useState(''); // 새 할 일 입력 상태
+  const [newTodoMember, setNewTodoMember] = useState('가족 공통'); // 새 할 일 담당자 상태
   const [editingTodoId, setEditingTodoId] = useState(null); // 현재 편집 중인 Todo ID
   const [editingTodoTitle, setEditingTodoTitle] = useState(''); // 현재 편집 중인 내용
   const { events, loading, familyId, todos, setTodos } = useFamily();
+
+  const members = ['가족 공통', '아빠', '엄마', '재인', '재이'];
 
   const toggleTodo = async (id, currentStatus) => {
     const newStatus = !currentStatus;
@@ -42,13 +45,14 @@ export default function HomeScreen({ navigation }) {
     const newTodo = {
       title: newTodoTitle,
       isCompleted: false,
-      assignee: '우리 가족' // 기본값
+      assignee: newTodoMember // 선택된 담당자 적용
     };
 
     try {
       const newId = await addTodo(familyId, newTodo);
       setTodos([{ ...newTodo, id: newId }, ...todos]);
       setNewTodoTitle('');
+      setNewTodoMember('가족 공통'); // 초기화
     } catch (error) {
       console.error("Todo 추가 실패", error);
     }
@@ -89,13 +93,12 @@ export default function HomeScreen({ navigation }) {
 
   const renderTodoItem = ({ item }) => (
     <View style={styles.todoItemWrapper}>
-      <TouchableOpacity 
-        style={[styles.todoItem, item.isCompleted && styles.todoItemCompleted]} 
-        onPress={() => toggleTodo(item.id, item.isCompleted)}
-        onLongPress={() => startEditing(item)} // 길게 누르면 수정 모드
-        activeOpacity={0.7}
-      >
-        <View style={styles.todoRow}>
+      <View style={[styles.todoItem, item.isCompleted && styles.todoItemCompleted]}>
+        <TouchableOpacity 
+          style={styles.todoRow} 
+          onPress={() => toggleTodo(item.id, item.isCompleted)}
+          activeOpacity={0.7}
+        >
           <View style={[styles.checkbox, item.isCompleted && styles.checkboxActive]} />
           
           {editingTodoId === item.id ? (
@@ -108,20 +111,24 @@ export default function HomeScreen({ navigation }) {
               autoFocus
             />
           ) : (
-            <Text style={[styles.todoTitle, item.isCompleted && styles.todoTextCompleted]}>
-              {item.title}
-            </Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.todoTitle, item.isCompleted && styles.todoTextCompleted]}>
+                {item.title}
+              </Text>
+              <Text style={styles.todoMemberText}>{item.assignee}</Text>
+            </View>
           )}
+        </TouchableOpacity>
+
+        <View style={styles.todoActionButtons}>
+          <TouchableOpacity onPress={() => startEditing(item)} style={styles.iconButton}>
+            <Text style={styles.editIcon}>✎</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleDeleteTodo(item.id)} style={styles.iconButton}>
+            <Text style={styles.deleteIcon}>✕</Text>
+          </TouchableOpacity>
         </View>
-        <View style={styles.assigneeBadge}>
-          <Text style={styles.assigneeText}>{item.assignee}</Text>
-        </View>
-      </TouchableOpacity>
-      
-      {/* 삭제 버튼 추가 */}
-      <TouchableOpacity onPress={() => handleDeleteTodo(item.id)} style={styles.deleteButton}>
-        <Text style={styles.deleteButtonText}>✕</Text>
-      </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -197,11 +204,26 @@ export default function HomeScreen({ navigation }) {
                 <View style={styles.listSection}>
                   <Text style={styles.sectionTitle}>✅ 가족 할 일 목록</Text>
                   
+                  {/* 담당자 선택 UI */}
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.memberSelector}>
+                    {members.map(member => (
+                      <TouchableOpacity 
+                        key={member} 
+                        style={[styles.memberTab, newTodoMember === member && styles.memberTabActive]}
+                        onPress={() => setNewTodoMember(member)}
+                      >
+                        <Text style={[styles.memberTabText, newTodoMember === member && styles.memberTabTextActive]}>
+                          {member}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+
                   {/* 신규 할 일 입력창 */}
                   <View style={styles.todoInputContainer}>
                     <TextInput
                       style={styles.todoInput}
-                      placeholder="새로운 할 일을 입력하세요"
+                      placeholder={`${newTodoMember}의 할 일 입력`}
                       value={newTodoTitle}
                       onChangeText={setNewTodoTitle}
                       onSubmitEditing={handleAddTodo}
@@ -390,23 +412,57 @@ const styles = StyleSheet.create({
     color: COLORS.lightText,
     marginTop: 4,
   },
-  todoItemWrapper: {
+  todoActionButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  deleteButton: {
-    padding: 10,
-    marginLeft: 5,
+  iconButton: {
+    padding: 6,
+    marginLeft: 4,
   },
-  deleteButtonText: {
-    fontSize: 18,
+  editIcon: {
+    fontSize: 16,
+    color: COLORS.primary,
+  },
+  deleteIcon: {
+    fontSize: 16,
     color: '#FF6B6B',
-    fontWeight: 'bold',
+  },
+  todoMemberText: {
+    fontSize: 10,
+    color: COLORS.lightText,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  memberSelector: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  memberTab: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    backgroundColor: '#F0F0F0',
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
+  },
+  memberTabActive: {
+    backgroundColor: COLORS.secondary,
+    borderColor: COLORS.secondary,
+  },
+  memberTabText: {
+    fontSize: 11,
+    color: COLORS.lightText,
+    fontWeight: '600',
+  },
+  memberTabTextActive: {
+    color: COLORS.white,
   },
   todoInputContainer: {
     flexDirection: 'row',
     marginBottom: 15,
+    width: '100%',
   },
   todoInput: {
     flex: 1,
@@ -417,6 +473,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#EFEFEF',
     marginRight: 8,
+    fontSize: 13,
   },
   todoAddBtn: {
     backgroundColor: COLORS.primary,
@@ -427,6 +484,7 @@ const styles = StyleSheet.create({
   todoAddBtnText: {
     color: COLORS.white,
     fontWeight: 'bold',
+    fontSize: 13,
   },
   todoEditInput: {
     flex: 1,
