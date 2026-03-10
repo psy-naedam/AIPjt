@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, FlatList, ScrollView, TextInput } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
@@ -17,7 +18,7 @@ LocaleConfig.defaultLocale = 'ko';
 
 export default function HomeScreen({ navigation }) {
   const [selectedDate, setSelectedDate] = useState('');
-  const [showTodo, setShowTodo] = useState(false);
+  const [showTodo, setShowTodo] = useState(true); // 첫 로딩 시 리스트가 보이도록 true로 변경
   const [newTodoTitle, setNewTodoTitle] = useState(''); // 새 할 일 입력 상태
   const [editingTodoId, setEditingTodoId] = useState(null); // 현재 편집 중인 Todo ID
   const [editingTodoTitle, setEditingTodoTitle] = useState(''); // 현재 편집 중인 내용
@@ -164,7 +165,11 @@ export default function HomeScreen({ navigation }) {
     <View style={styles.container}>
       {/* 왼쪽: 액션 버튼 영역 (기존 오른쪽) */}
       <View style={styles.rightPanel}>
-        <View style={styles.actionContainer}>
+        <ScrollView 
+          style={styles.actionScrollView}
+          contentContainerStyle={styles.actionContainer}
+          showsVerticalScrollIndicator={false}
+        >
           <TouchableOpacity 
             style={styles.addButton} 
             onPress={() => navigation.navigate('Schedule', { date: selectedDate })}
@@ -180,7 +185,7 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
           
           {showTodo && (
-            <ScrollView style={{ width: '100%', marginTop: 15 }} showsVerticalScrollIndicator={false}>
+            <View style={{ width: '100%', marginTop: 15 }}>
               {events.length > 0 && (
                 <View style={styles.listSection}>
                   <Text style={styles.sectionTitle}>📅 다가오는 가족 일정</Text>
@@ -215,9 +220,9 @@ export default function HomeScreen({ navigation }) {
                   등록된 일정이나 할 일이 없습니다.
                 </Text>
               )}
-            </ScrollView>
+            </View>
           )}
-        </View>
+        </ScrollView>
       </View>
 
       {/* 오른쪽: 달력 영역 (기존 왼쪽) */}
@@ -264,12 +269,16 @@ const styles = StyleSheet.create({
     padding: SIZES.padding,
   },
   leftPanel: {
-    flex: 2, // 달력 영역이 화면의 2/3 정도를 차지하도록 비율 설정
-    paddingRight: 15,
+    flex: 3, // 달력 영역 비율 확대 (새로운 비율 1:3)
+    paddingLeft: 15, // 왼쪽 사이드바와의 간격을 위해 paddingLeft로 수정
   },
   rightPanel: {
-    flex: 1, // 버튼 영역이 화면의 1/3 비율을 차지하도록 설정
+    flex: 1, // 버튼 및 리스트 영역 비율 축소
     justifyContent: 'flex-start',
+  },
+  actionScrollView: {
+    flex: 1,
+    width: '100%',
   },
   calendarContainer: {
     backgroundColor: COLORS.white,
