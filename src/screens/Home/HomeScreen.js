@@ -19,6 +19,8 @@ export default function HomeScreen({ navigation }) {
   const [selectedDate, setSelectedDate] = useState('');
   const [showTodo, setShowTodo] = useState(false);
   const [newTodoTitle, setNewTodoTitle] = useState(''); // 새 할 일 입력 상태
+  const [editingTodoId, setEditingTodoId] = useState(null); // 현재 편집 중인 Todo ID
+  const [editingTodoTitle, setEditingTodoTitle] = useState(''); // 현재 편집 중인 내용
   const { events, loading, familyId, todos, setTodos } = useFamily();
 
   const toggleTodo = async (id, currentStatus) => {
@@ -60,18 +62,55 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const startEditing = (todo) => {
+    setEditingTodoId(todo.id);
+    setEditingTodoTitle(todo.title);
+  };
+
+  const handleUpdateTodo = async () => {
+    if (!editingTodoId || !editingTodoTitle.trim()) {
+      setEditingTodoId(null);
+      return;
+    }
+
+    const updatedTodo = { title: editingTodoTitle };
+    
+    try {
+      await updateTodo(familyId, editingTodoId, updatedTodo);
+      setTodos(todos.map(todo => 
+        todo.id === editingTodoId ? { ...todo, title: editingTodoTitle } : todo
+      ));
+      setEditingTodoId(null);
+    } catch (error) {
+      console.error("Todo 수정 실패", error);
+    }
+  };
+
   const renderTodoItem = ({ item }) => (
     <View style={styles.todoItemWrapper}>
       <TouchableOpacity 
         style={[styles.todoItem, item.isCompleted && styles.todoItemCompleted]} 
         onPress={() => toggleTodo(item.id, item.isCompleted)}
+        onLongPress={() => startEditing(item)} // 길게 누르면 수정 모드
         activeOpacity={0.7}
       >
         <View style={styles.todoRow}>
           <View style={[styles.checkbox, item.isCompleted && styles.checkboxActive]} />
-          <Text style={[styles.todoTitle, item.isCompleted && styles.todoTextCompleted]}>
-            {item.title}
-          </Text>
+          
+          {editingTodoId === item.id ? (
+            <TextInput
+              style={styles.todoEditInput}
+              value={editingTodoTitle}
+              onChangeText={setEditingTodoTitle}
+              onBlur={handleUpdateTodo}
+              onSubmitEditing={handleUpdateTodo}
+              autoFocus
+            />
+          ) : (
+            <Text style={[styles.todoTitle, item.isCompleted && styles.todoTextCompleted]}>
+              {item.title}
+            </Text>
+          )}
         </View>
         <View style={styles.assigneeBadge}>
           <Text style={styles.assigneeText}>{item.assignee}</Text>
@@ -379,5 +418,13 @@ const styles = StyleSheet.create({
   todoAddBtnText: {
     color: COLORS.white,
     fontWeight: 'bold',
+  },
+  todoEditInput: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.text,
+    padding: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.primary,
   }
 });
